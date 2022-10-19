@@ -3,17 +3,17 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 
 #[derive(Debug)]
-pub(crate) struct PictureClass {
+pub struct PictureClass {
     pub numerical_value: i32
 }
 
 #[derive(Debug)]
-pub(crate) struct Picture<const RESOLUTION: usize> {
+pub struct Picture<const RESOLUTION: usize> {
     pub data: [[u8; RESOLUTION]; RESOLUTION]
 }
 
 #[derive(Debug)]
-pub(crate) struct ClassifiedPicture<const RESOLUTION: usize> {
+pub struct ClassifiedPicture<const RESOLUTION: usize> {
     pub picture: Picture<RESOLUTION>,
     pub class: PictureClass
 }
