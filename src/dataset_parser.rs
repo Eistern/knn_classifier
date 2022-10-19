@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
@@ -96,17 +97,20 @@ fn parse_pictures<const RESOLUTION: usize>(picture_path: String) -> Vec<Picture<
     assert_eq!(picture_width_size, picture_height_size);
 
     for _ in 0..picture_vec_size {
-        let picture = read_next_picture::<RESOLUTION>(&mut picture_reader, picture_height_size);
+        let picture = read_next_picture::<RESOLUTION>(
+            &mut picture_reader,
+            picture_height_size as usize
+        );
         parsed_pictures.push(picture);
     }
 
     parsed_pictures
 }
 
-fn read_next_picture<const RESOLUTION: usize>(file: &mut BufReader<File>, side_length: i32) -> Picture<RESOLUTION> {
-    let mut picture_scaled = [[0; RESOLUTION]; RESOLUTION];
+fn read_next_picture<const RESOLUTION: usize>(file: &mut BufReader<File>, side_length: usize) -> Picture<RESOLUTION> {
+    let mut picture_scaled = Vec::with_capacity(side_length);
 
-    for i in 0..RESOLUTION {
+    for _ in 0..side_length {
         let mut row_raw = Vec::with_capacity(side_length as usize);
 
         for _ in 0..side_length {
@@ -114,57 +118,77 @@ fn read_next_picture<const RESOLUTION: usize>(file: &mut BufReader<File>, side_l
             row_raw.push(pixel);
         }
 
-        let row_scaled = scale_row_to::<RESOLUTION>(row_raw.as_slice());
-
-        picture_scaled[i as usize] = row_scaled;
+        let filled_raw_row = row_raw.clone();
+        picture_scaled.push(filled_raw_row);
     }
 
-    Picture { data: picture_scaled }
+    scale_raw_picture::<RESOLUTION>(picture_scaled)
 }
 
-fn scale_row_to<const RESOLUTION: usize>(raw_row: &[u8]) -> [u8; RESOLUTION] {
-    if raw_row.len() == RESOLUTION {
-        clone_slice_into_const_array(raw_row)
-    } else if raw_row.len() > RESOLUTION {
-        scale_row_down_to::<RESOLUTION>(raw_row)
+fn scale_raw_picture<const RESOLUTION: usize>(raw_data: Vec<Vec<u8>>) -> Picture<{ RESOLUTION }> {
+    if raw_data.len() == RESOLUTION {
+        Picture { data: copy_into_fixed_array::<RESOLUTION>(raw_data) }
+    } else if raw_data.len() > RESOLUTION {
+        Picture { data: scale_down_to::<RESOLUTION>(raw_data) }
     } else {
-        upscale_row_to::<RESOLUTION>(raw_row)
+        Picture { data: upscale_to::<RESOLUTION>(raw_data) }
     }
 }
 
-fn clone_slice_into_const_array<const RESOLUTION: usize>(raw_row: &[u8]) -> [u8; RESOLUTION] {
-    let mut raw_buffer: [u8; RESOLUTION] = [0; RESOLUTION];
-    raw_buffer.copy_from_slice(raw_row);
-    raw_buffer
+fn copy_into_fixed_array<const RESOLUTION: usize>(data: Vec<Vec<u8>>) -> [[u8; RESOLUTION]; RESOLUTION] {
+    let mut fixed_buffer = [[0; RESOLUTION]; RESOLUTION];
+    for i in 0..RESOLUTION {
+        let mut fixed_row_buffer = [0; RESOLUTION];
+
+        let row_clone = data[i].clone();
+        fixed_row_buffer.copy_from_slice(row_clone.as_slice());
+
+        fixed_buffer[i] = fixed_row_buffer;
+    }
+    fixed_buffer
 }
 
-fn upscale_row_to<const RESOLUTION: usize>(raw_row: &[u8]) -> [u8; RESOLUTION] {
-    let mut scaled_buffer: [u8; RESOLUTION] = [0; RESOLUTION];
+fn upscale_to<const RESOLUTION: usize>(data: Vec<Vec<u8>>) -> [[u8; RESOLUTION]; RESOLUTION] {
+    let mut scaled_buffer = [[0; RESOLUTION]; RESOLUTION];
 
-    let scale_factor = RESOLUTION / raw_row.len();
+    let scale_factor = RESOLUTION / data.len();
 
     for i in 0..RESOLUTION {
-        let previous_value = raw_row[i / scale_factor];
-        let next_value = raw_row[i / scale_factor + 1];
 
-        let step = ((next_value - previous_value) as usize / scale_factor) as u8;
-        let step_number = (i % scale_factor) as u8;
-
-        let scaled_value = previous_value + step * step_number;
-        scaled_buffer[i] = scaled_value;
     }
 
     scaled_buffer
 }
 
-fn scale_row_down_to<const RESOLUTION: usize>(raw_row: &[u8]) -> [u8; RESOLUTION] {
-    let mut scaled_buffer: [u8; RESOLUTION] = [0; RESOLUTION];
+fn scale_down_to<const RESOLUTION: usize>(data: Vec<Vec<u8>>) -> [[u8; RESOLUTION]; RESOLUTION] {
+    let mut scaled_buffer = [[0; RESOLUTION]; RESOLUTION];
 
-    let scale_factor = raw_row.len() / RESOLUTION;
+    let sliced_vec: Vec<&[u8]> = data.iter().map(Vec::as_slice).collect();
+    let sliced_data = sliced_vec.as_slice();
+
+    let scale_factor = sliced_data.len() / RESOLUTION;
 
     for i in 0..RESOLUTION {
-        scaled_buffer[i] = raw_row[i * scale_factor]
+        let y_start = i * scale_factor;
+        let y_finish = y_start + scale_factor;
+        for j in 0..RESOLUTION {
+            let x_start = j * scale_factor;
+            let x_finish = x_start + scale_factor;
+
+            let mean = mean(sliced_data, y_start, y_finish, x_start, x_finish);
+            scaled_buffer[i][j] = mean;
+        }
     }
 
     scaled_buffer
+}
+
+fn mean(chunk: &[&[u8]], y_start: usize, y_finish: usize, x_start: usize, x_finish: usize) -> u8 {
+    let mut sum : i32 = 0;
+    for row in chunk[y_start..y_finish].borrow() {
+        for pixel in (*row)[x_start..x_finish].borrow() {
+            sum += *pixel as i32;
+        }
+    }
+    (sum / chunk.len() as i32) as u8
 }
