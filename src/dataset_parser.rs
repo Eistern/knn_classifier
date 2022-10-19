@@ -154,7 +154,10 @@ fn upscale_to<const RESOLUTION: usize>(data: Vec<Vec<u8>>) -> [[u8; RESOLUTION];
     let scale_factor = RESOLUTION / data.len();
 
     for i in 0..RESOLUTION {
-
+        for j in 0..RESOLUTION {
+            let value = data[i / scale_factor][j / scale_factor];
+            scaled_buffer[i][j] = value;
+        }
     }
 
     scaled_buffer

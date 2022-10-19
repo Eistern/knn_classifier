@@ -17,7 +17,7 @@ fn print_picture<const RESOLUTION: usize>(pic: &ClassifiedPicture<RESOLUTION>) {
 
 fn main() {
     let start = Instant::now();
-    let dataset = dataset_parser::parse_pic_dataset::<8>(
+    let dataset = dataset_parser::parse_pic_dataset::<56>(
         "data/test-labels.idx1-ubyte".to_owned(),
         "data/test-images.idx3-ubyte".to_owned());
     let elapsed = start.elapsed();
