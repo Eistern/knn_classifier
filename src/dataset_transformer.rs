@@ -6,11 +6,11 @@ pub struct PictureVectorTransformer<const RESOLUTION: usize> {
 }
 
 impl<const RESOLUTION: usize> PictureVectorTransformer<RESOLUTION> {
-    fn create(transforming_vec: Vec<ClassifiedPicture<RESOLUTION>>) -> PictureVectorTransformer<RESOLUTION> {
+    pub fn create(transforming_vec: Vec<ClassifiedPicture<RESOLUTION>>) -> PictureVectorTransformer<RESOLUTION> {
         PictureVectorTransformer{ picture_vector: transforming_vec, queued_functions: Vec::new() }
     }
 
-    fn add_mutator(&mut self, mutator: fn(ClassifiedPicture<RESOLUTION>) -> ClassifiedPicture<RESOLUTION>) {
+    pub fn add_mutator(&mut self, mutator: fn(ClassifiedPicture<RESOLUTION>) -> ClassifiedPicture<RESOLUTION>) {
         self.queued_functions.push(mutator)
     }
 }

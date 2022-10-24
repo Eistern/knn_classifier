@@ -2,9 +2,11 @@ extern crate core;
 
 use std::time::Instant;
 use crate::dataset_parser::{ClassifiedPicture};
+use crate::dataset_transformer::{PictureVectorTransformer, run_transformer};
 
 mod dataset_parser;
-mod dataset_transformers;
+mod dataset_transformer;
+mod dataset_transformer_fn;
 
 fn print_picture<const RESOLUTION: usize>(pic: &ClassifiedPicture<RESOLUTION>) {
     println!("Label: {}", pic.class.numerical_value);
@@ -26,8 +28,10 @@ fn main() {
     // Parse time
     println!("Elapsed: {:?}", elapsed);
 
-    let picture = dataset.get(0).unwrap();
+    let mut transformer = PictureVectorTransformer::create(dataset);
+    transformer.add_mutator(dataset_transformer_fn::bw);
+    let transformed_dataset = run_transformer(transformer);
+
+    let picture = transformed_dataset.get(0).unwrap();
     print_picture(picture);
-
-
 }
