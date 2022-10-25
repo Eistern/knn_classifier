@@ -30,6 +30,8 @@ fn main() {
 
     let mut transformer = PictureVectorTransformer::create(dataset);
     transformer.add_mutator(dataset_transformer_fn::bw);
+    transformer.add_mutator(dataset_transformer_fn::linear_noise::<4, 28>);
+
     let transformed_dataset = run_transformer(transformer);
 
     let picture = transformed_dataset.get(0).unwrap();
