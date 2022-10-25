@@ -8,6 +8,8 @@ mod dataset_parser;
 mod dataset_transformer;
 mod dataset_transformer_fn;
 
+const RESOLUTION : usize = 28;
+
 fn print_picture<const RESOLUTION: usize>(pic: &ClassifiedPicture<RESOLUTION>) {
     println!("Label: {}", pic.class.numerical_value);
     for i in 0..RESOLUTION {
@@ -20,7 +22,7 @@ fn print_picture<const RESOLUTION: usize>(pic: &ClassifiedPicture<RESOLUTION>) {
 
 fn main() {
     let start = Instant::now();
-    let dataset = dataset_parser::parse_pic_dataset::<28>(
+    let dataset = dataset_parser::parse_pic_dataset::<RESOLUTION>(
         "data/train-labels.idx1-ubyte".to_owned(),
         "data/train-images.idx3-ubyte".to_owned());
     let elapsed = start.elapsed();
@@ -30,7 +32,8 @@ fn main() {
 
     let mut transformer = PictureVectorTransformer::create(dataset);
     transformer.add_mutator(dataset_transformer_fn::bw);
-    transformer.add_mutator(dataset_transformer_fn::linear_noise::<4, 28>);
+    // transformer.add_mutator(dataset_transformer_fn::linear_noise::<4, RESOLUTION>);
+    transformer.add_mutator(dataset_transformer_fn::nonlinear_noise::<128, 3, RESOLUTION>);
 
     let transformed_dataset = run_transformer(transformer);
 
