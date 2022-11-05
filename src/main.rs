@@ -64,20 +64,25 @@ fn main() {
     let mut transformed_test = normalize(dataset_test);
 
     let elapsed = start.elapsed();
+    // Transform time
+    println!("Transformed: {:?}", elapsed);
 
     let picture = transformed_dataset.get(0).unwrap();
     print_picture(picture);
 
-    // Transform time
-    println!("Transformed: {:?}", elapsed);
-
     let _ = transformed_test.split_off(100);
+
+    let start = Instant::now();
 
     let classifier = KnnClassifier::<RESOLUTION, 10> {
         train_vector: transformed_dataset,
         metrics_function: knn_classifier_metrics::euclidean_squared
     };
     let error_matrix = get_error_matrix(classifier, transformed_test);
+
+    let elapsed = start.elapsed();
+    // Classification time
+    println!("Classified: {:?}", elapsed);
 
     print_mx(error_matrix);
 }
