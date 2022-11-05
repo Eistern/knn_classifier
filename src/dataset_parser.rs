@@ -2,17 +2,17 @@ use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
-#[derive(Debug)]
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub struct PictureClass {
     pub numerical_value: i32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub struct Picture<const RESOLUTION: usize> {
     pub data: [[u8; RESOLUTION]; RESOLUTION]
 }
 
-#[derive(Debug)]
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub struct ClassifiedPicture<const RESOLUTION: usize> {
     pub picture: Picture<RESOLUTION>,
     pub class: PictureClass
